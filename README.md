@@ -285,7 +285,7 @@ Conclusions
 
 ## License
 
-[Specify your license - MIT, Apache 2.0, CC-BY, etc.]
+MIT License
 
 ## Contact & Support
 
