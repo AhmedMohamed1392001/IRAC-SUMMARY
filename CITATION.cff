@@ -1,0 +1,32 @@
+cff-version: 1.2.0
+message: "If you use IRAC-Bench in your research, please cite it as below."
+title: "IRAC-Bench: Benchmarking Legal Reasoning Fidelity in Judicial Summarization"
+type: dataset
+authors:
+  - family-names: "Elmahjub"
+    given-names: "Ezieddin M. Jaballa"
+    orcid: "https://orcid.org/0000-0002-7741-8195"
+  - family-names: "Aloraini"
+    given-names: "Eman Nawaf Atieh"
+  - family-names: "Mohamed"
+    given-names: "Ahmed Ayman Ahmed Ezzat"
+    orcid: "https://orcid.org/0009-0007-6105-0270"
+  - family-names: "Shaban"
+    given-names: "Khaled"
+    orcid: "https://orcid.org/0000-0002-5688-7515"
+  - family-names: "Alali"
+    given-names: "Salah Feras"
+  - family-names: "Khamis"
+    given-names: "Huzayfa Aiman"
+  - family-names: "Rajha"
+    given-names: "Huthaifa Emad"
+  - family-names: "Maasfeh"
+    given-names: "Mohammad Nashat"
+repository-code: "https://github.com/AhmedMohamed1392001/IRAC-SUMMARY"
+license: MIT
+keywords:
+  - legal summarization
+  - judicial reasoning
+  - benchmark datasets
+  - large language models
+  - reasoning fidelity

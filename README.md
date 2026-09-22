@@ -1,307 +1,70 @@
-# IRAC Legal Case Document Summarization
+# IRAC-Bench: Benchmarking Legal Reasoning Fidelity in Judicial Summarization
+
+Code and dataset for the paper *IRAC-Bench: Benchmarking Legal Reasoning Fidelity in Judicial Summarization*.
 
 ## Overview
 
-This project implements **structured legal reasoning extraction** for judicial case decisions using the **IRAC framework** (Issue, Rule, Application, Conclusion). Unlike generic text compression, this approach focuses on extracting the core reasoning components that legal professionals use when briefing and communicating cases.
+IRAC-Bench is a benchmark of **299 common-law judicial decisions** from courts in the United Kingdom and the United States, each paired with a human-validated **Issue, Rule, Application, Conclusion (IRAC)** reference annotation. The benchmark treats judicial summarization as structured legal reasoning extraction rather than generic text compression, and scores Rule and Application separately as distinct reasoning operations.
 
-The system evaluates **large language models** on their ability to produce professionally usable legal summaries grounded in legal faithfulness and reasoning fidelity, rather than surface-level lexical similarity.
+## What is in this repository
 
-## Key Features
+- **IRAC reference annotations** for all 299 decisions (CC BY 4.0)
+- **Dataset splits**: 237 training / 31 development / 31 test cases (stratified by jurisdiction and legal domain, seed 42)
+- **Per-case provenance manifest**: court citations, decision dates, and retrieval dates
+- **Human IRAC Summary Guidelines**: the full instructions given to the legally trained annotators
+- **Evaluation code**: the LLM-as-judge evaluation script (`llm_judge_eval.py`)
 
-- **IRAC-Based Structured Summarization**: Decomposes judicial decisions into Issue, Rule, Application, and Conclusion components
-- **LLM-as-Judge Evaluation**: Employs Claude or GPT models as expert evaluators using Human IRAC Summary Guidelines
-- **Hallucination Detection**: Identifies and flags legally consequential errors such as missing rules, distorted reasoning, and incorrect outcomes
-- **Multi-Model Evaluation**: Tests performance across frontier LLMs (Claude, GPT, Gemini, DeepSeek, Qwen, Mistral, etc.)
-- **Legal Faithfulness Metrics**: Prioritizes structural fidelity and reasoning accuracy over lexical overlap
-- **Component-Level Scoring**: Enables fine-grained assessment of each IRAC section independently
+## Annotation workflow
 
-## Domain
+Candidate IRAC summaries were drafted with model assistance using controlled prompts, then each draft was checked against the full judicial opinion and substantively revised by a legally trained annotator (a Professor of Law or a fourth-year law student with formal IRAC training). No unreviewed model output was retained. Because each case was validated by a single annotator rather than independently double-annotated, the annotations are described as human-validated reference annotations.
 
-**Legal AI & Natural Language Processing** – Specifically designed for:
-- Legal professionals requiring reliable case summaries
-- Researchers studying legal document understanding
-- Legal tech systems needing trustworthy case briefing
-- Domain experts in judicial reasoning extraction
+## Evaluation
 
-## Project Structure
+Generated summaries are scored per IRAC component on a 0-2 ordinal scale by an LLM judge (OpenAI o3, temperature 0), validated against a human evaluation by three legally trained annotators. The **reliability-failure rate** is the proportion of summaries with at least one component scored 0 or a mean component score below 1.0.
 
-```
-├── llm_judge_eval.py          # LLM-as-Judge evaluation script
-├── prepare_data.py             # Data preparation and train/dev/test splitting
-├── data/
-│   ├── raw/
-│   │   └── DataCases.xlsx     # Input legal case data
-│   └── processed/
-│       ├── train.jsonl         # Training dataset
-│       ├── dev.jsonl           # Development/validation dataset
-│       └── test.jsonl          # Test dataset
-└── README.md                    # This file
-```
+### Headline results (31-case held-out test set)
 
-## Installation & Setup
+| Model | Overall IRAC | Reliability-failure rate |
+| --- | --- | --- |
+| Claude Sonnet 4.5 (zero-shot) | 87.1% | 3.2% |
+| Gemini 3 Flash (zero-shot) | 87.1% | 9.7% |
+| GPT-4.1-mini (fine-tuned) | 87.1% | 4.4% |
+| Gemini 3 Pro (zero-shot) | 85.1% | 9.7% |
+| GPT-5.2 (zero-shot) | 81.9% | 12.9% |
+| DeepSeek-V3.2 (zero-shot) | 80.6% | 9.7% |
+| Grok 4.1 (zero-shot) | 75.0% | 26.7% |
+| Qwen3-14B-11000 (fine-tuned) | 71.2% | 6.7% |
+| Phi-4-11000 (fine-tuned) | 68.5% | 16.1% |
+| Qwen3-235B (zero-shot) | 63.7% | 74.2% |
+| Qwen3-4B-11000 (fine-tuned) | 59.7% | 41.9% |
+| Mistral-7B-11000 (fine-tuned) | 53.2% | 48.4% |
+| Llama-3.2-11000 (fine-tuned) | 51.6% | 48.4% |
+| Qwen3-4B-8194 (fine-tuned) | 50.4% | 54.8% |
+| Mistral-7B-12000 (fine-tuned) | 43.1% | 64.5% |
 
-### Prerequisites
-- Python 3.9+
-- Required libraries: `pandas`, `scikit-learn`, `anthropic`, `openai`, `tqdm`
-
-### Quick Start
-
-1. **Clone the repository**
-   ```bash
-   git clone <repository-url>
-   cd irac-legal-summarization
-   ```
-
-2. **Install dependencies**
-   ```bash
-   pip install pandas scikit-learn anthropic openai tqdm
-   ```
-
-3. **Set up API credentials**
-   - For Claude: `export ANTHROPIC_API_KEY="your-key"`
-   - For GPT: `export OPENAI_API_KEY="your-key"`
+Surface metrics do not certify legal reliability: Qwen3-235B reaches ROUGE-1 61.61 and BERTScore F1 85.94 while failing on 74.2% of test summaries.
 
 ## Usage
 
-### 1. Data Preparation
-
-Prepare your legal case data from an XLSX file:
-
 ```bash
-python prepare_data.py
-```
+pip install pandas scikit-learn anthropic openai tqdm
 
-This script:
-- Reads `data/raw/DataCases.xlsx`
-- Splits data into train (80%), dev (10%), and test (10%) sets
-- Outputs JSONL files to `data/processed/`
-- Handles missing data gracefully with placeholders
-
-### 2. Evaluate Model Predictions
-
-Evaluate any model's predictions using the LLM-as-Judge framework:
-
-```bash
-# Evaluate with Claude Sonnet 4.5 (default)
+# evaluate model predictions with the LLM-as-judge framework
 python llm_judge_eval.py --predictions models_output/predictions.json
-
-# Evaluate with GPT-5.2
-python llm_judge_eval.py --predictions models_output/predictions.json --model gpt-5.2
-
-# Custom output directory
-python llm_judge_eval.py \
-    --predictions models_output/predictions.json \
-    --output-dir results/ \
-    --model claude-sonnet-4-5-20250929 \
-    --hallucination-threshold 1.0
 ```
 
-### 3. Supported Models
+Set `ANTHROPIC_API_KEY` / `OPENAI_API_KEY` as needed.
 
-**Zero-Shot Evaluation:**
-- Claude Sonnet 4.5 (Anthropic)
-- GPT-5.2 (OpenAI)
-- Gemini 3 Flash / Gemini 3 Pro (DeepMind)
-- DeepSeek v3.2
-- Grok 4.1 (xAI)
-- Qwen-235B
+## Licensing
 
-**Fine-Tuned Models:**
-- Qwen3-14B
-- Mistral-7B
-- Llama3.2
-- Phi-4
-
-## IRAC Framework Explained
-
-Each case summary is structured into four legally meaningful components:
-
-### Issue
-- **Purpose**: Identify the central legal question
-- **Format**: "Whether [X] when [circumstances]"
-- **Scoring**: Precise framing, includes parties, doctrine, and key facts (0-2 scale)
-
-**Example**: "Whether a landlord owed a duty of care to a visitor injured in a common stairwell when the landlord had outsourced maintenance to a third-party contractor."
-
-### Rule
-- **Purpose**: State the controlling legal rules, tests, or standards
-- **Format**: Elements/steps with proper sources and pinpoint citations
-- **Scoring**: Accuracy, completeness of elements, relevant exceptions (0-2 scale)
-
-**Example**: "A duty of care arises where harm is reasonably foreseeable, there is a relationship of proximity, and it is fair, just and reasonable to impose a duty (at [42]-[45])."
-
-### Application
-- **Purpose**: Show how the court applies the rule to material facts
-- **Format**: Element-by-element analysis with explicit law-to-fact connections
-- **Scoring**: Thoroughness, legal reasoning quality, identification of contested elements (0-2 scale)
-- **Note**: This is the most critical section and typically the longest
-
-### Conclusion
-- **Purpose**: State the bottom-line legal outcome
-- **Format**: One sentence answering the Issue + procedural disposition
-- **Scoring**: Correctness of both holding and procedural outcome (0-2 scale)
-
-**Example**: "The court held that the landlord owed a duty of care; therefore, the appeal was allowed."
-
-## Evaluation Metrics
-
-### Primary Metrics (Structure-Based)
-
-| Metric | Description | Scale |
-|--------|-------------|-------|
-| Issue Score | Legal question accuracy | 0-2 |
-| Rule Score | Controlling rule identification | 0-2 |
-| Application Score | Reasoning quality and completeness | 0-2 |
-| Conclusion Score | Holding and disposition accuracy | 0-2 |
-| **Overall Score** | **Mean across all sections** | **0-2** |
-
-### Secondary Metrics (Lexical/Semantic)
-
-- **ROUGE-1, ROUGE-2, ROUGE-L**: N-gram overlap (diagnostic only)
-- **BERTScore F1**: Semantic similarity using contextual embeddings
-
-### Hallucination Detection
-
-Models are flagged as hallucinating if:
-1. Any section receives a score of 0 (missing, incorrect, or fabricated), OR
-2. Average score falls below 1.0 with partial scores
-
-**Hallucination Rate** = % of test samples with hallucinations
-
-## Benchmark Results
-
-Key findings from IRAC-BENCH evaluation (300 judicial decisions):
-
-| Model | Overall Score | Hallucination Rate | Best At | Notes |
-|-------|---------------|--------------------|---------|-------|
-| Claude Sonnet 4.5 | 87.1% | 3.2% | Application, Conclusion | Lowest hallucination |
-| Gemini 3 Flash | 87.1% | 9.7% | Rule extraction | Close lexical alignment |
-| GPT-4.1-mini (FT) | 87.1% | 4.4% | All components | Fine-tuning effective |
-| DeepSeek v3.2 | 80.6% | 9.7% | Overall balance | Competitive zero-shot |
-| Mistral-7B (FT) | 53.2% | 48.4% | Smaller capacity | Struggles with analysis |
-| Qwen-235B | 63.7% | 74.2% | N/A | High hallucination risk |
-
-**Key Insight**: Surface metrics (ROUGE, BERTScore) are insufficient. Qwen-235B achieved ROUGE-1 of 61.61 but had 74.2% hallucination rate.
-
-## Output Format
-
-The evaluation produces a JSON file with:
-
-```json
-{
-  "evaluation_date": "2025-04-29T...",
-  "model_used": "claude-sonnet-4-5-20250929",
-  "evaluation_criteria": "Human IRAC Summary Guidelines",
-  "metrics": {
-    "issue_score_pct": 88.7,
-    "rule_score_pct": 75.8,
-    "application_score_pct": 90.3,
-    "conclusion_score_pct": 93.5,
-    "overall_score_pct": 87.1,
-    "hallucination_rate_pct": 3.2
-  },
-  "results": [
-    {
-      "case_name": "Case v. Party",
-      "issue_score": 2,
-      "rule_score": 1,
-      "application_score": 2,
-      "conclusion_score": 2,
-      "hallucination": false
-    }
-  ]
-}
-```
-
-## Research Methodology
-
-This project implements research advancing **structured legal reasoning extraction** rather than generic compression:
-
-1. **Dataset**: 300 curated judicial decisions from multiple jurisdictions (UK Supreme Court, US Supreme Court, federal/state courts)
-2. **Annotation Pipeline**: LLM-generated candidates + expert human validation (substantive revision)
-3. **Evaluation**: LLM-as-Judge (using o3) anchored in legal reasoning rubric
-4. **Validation**: Human expert evaluation on representative sample confirms automated scoring reliability
-
-## Requirements & Dependencies
-
-```
-pandas>=1.3.0
-scikit-learn>=1.0.0
-anthropic>=0.8.0
-openai>=1.0.0
-tqdm>=4.62.0
-```
-
-Install all:
-```bash
-pip install -r requirements.txt
-```
-
-## Legal Faithfulness vs. Surface Similarity
-
-This project prioritizes **legal faithfulness** (does the summary preserve correct legal reasoning?) over **surface similarity** (do the words match?).
-
-### Why This Matters
-
-A summary can achieve high ROUGE scores while being legally wrong:
-- Missing the controlling rule
-- Misapplying the rule to facts
-- Stating the wrong outcome
-- Hallucinating doctrinal elements
-
-**Example**: ROUGE-1=61.61, BERTScore=85.94, but 74.2% hallucination rate = **unusable in legal practice**
-
-## Error Analysis
-
-Common failure modes identified:
-
-| Component | Challenge | Why It Matters |
-|-----------|-----------|----------------|
-| **Rule** | Identifying correct legal standard | Misstated rules change case meaning |
-| **Application** | Linking law to facts element-by-element | Wrong analysis undermines holding |
-| **Conclusion** | Stating both holding AND disposition | Omitted procedural outcome misleads readers |
-
-**Key Finding**: Application (rule-to-fact linking) is the most challenging for smaller models.
-
-## Limitations & Future Work
-
-### Current Limitations
-- Focused on English-language common law decisions
-- Dataset skew toward civil procedure and tort law
-- Evaluation limited to English-language jurisdictions
-
-### Future Directions
-- Multi-case reasoning and cross-citation analysis
-- Retrieval-augmented generation (RAG) for better rule identification
-- Cross-jurisdictional adaptation
-- Improved handling of complex multi-party disputes
+- **Code**: MIT License (see `LICENSE`)
+- **IRAC annotations, splits, and provenance manifest**: CC BY 4.0 (see `DATA_LICENSE`)
+- **Judicial opinions**: public-domain texts from open-access legal repositories and official court websites; the provenance manifest supports verification of reuse conditions per case.
 
 ## Citation
 
-If you use this project in research, please cite:
-
-Toward Summarizing Case Decisions via Extracting Argument Issues, Rule, Analysis and
-Conclusions
-
-## License
-
-MIT License
-
-## Contact & Support
-
-For questions or issues:
-- **Email**: am2401295@qu.edu.qa
-
-- **Documentation**: See paper : Toward Summarizing Case Decisions via Extracting Argument Issues, Rule, Analysis and
-Conclusions
+If you use IRAC-Bench, please cite the paper *IRAC-Bench: Benchmarking Legal Reasoning Fidelity in Judicial Summarization* (see `CITATION.cff`).
 
 ## Acknowledgments
 
-- Legal expert annotators for IRAC-BENCH validation
-- Qatar University & STM Document Engineering for dataset curation
-- Anthropic, OpenAI, and other model providers for API access
-
----
-
-**Last Updated**: April 2025  
-**Status**: Active research project
+The authors thank Qatar University and Bond University for institutional support, and the legal experts who participated in the IRAC annotation review process.

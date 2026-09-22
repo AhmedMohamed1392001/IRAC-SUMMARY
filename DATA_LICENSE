@@ -1,0 +1,18 @@
+DATA LICENSE
+
+The IRAC reference annotations, dataset splits, and per-case provenance
+manifest in this repository are released under the Creative Commons
+Attribution 4.0 International License (CC BY 4.0).
+
+Full license text: https://creativecommons.org/licenses/by/4.0/legalcode
+
+The underlying judicial opinions are works of public authority obtained
+from open-access legal repositories and official court websites. In the
+United States, judicial opinions are uncopyrightable under long-standing
+federal doctrine. U.K. judgments were obtained under the applicable
+access and reuse arrangements of their sources. The per-case provenance
+manifest supports verification of the applicable reuse conditions for
+individual opinions.
+
+The source code in this repository is licensed separately under the MIT
+License (see the LICENSE file).
