@@ -370,7 +370,7 @@ def run_evaluation(predictions_path: str, output_dir: str = None, model: str = "
 
     # Load predictions
     print(f"Loading predictions from {predictions_path}...")
-    with open(predictions_path, 'r') as f:
+    with open(predictions_path, 'r', encoding="utf-8") as f:
         predictions = json.load(f)
 
     print(f"Found {len(predictions)} samples to evaluate")
@@ -475,7 +475,8 @@ def run_evaluation(predictions_path: str, output_dir: str = None, model: str = "
     output_path = output_dir / f"llm_judge_results_{model}.json"
 
     # Save results
-    with open(output_path, 'w') as f:
+    os.makedirs(os.path.dirname(output_path) or ".", exist_ok=True)
+    with open(output_path, 'w', encoding="utf-8") as f:
         json.dump(summary, f, indent=2)
 
     print()
